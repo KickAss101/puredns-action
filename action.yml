@@ -46,7 +46,7 @@ runs:
       with:
         path: |
           /usr/local/bin/massdns
-          $GOPATH/pkg/mod/github.com/d3mondev/puredns*
+          ~/go/bin/puredns
         key: ${{ runner.os }}-deps-${{ hashFiles('subdir/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-deps-
