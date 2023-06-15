@@ -28,7 +28,7 @@ Example Usage
           rate_limit: 750
 ```
 
-**Example workflow to resolve and bruteforce simulataneously**: `.github/workflows/puredns.yml`
+**Example workflow to resolve and bruteforce simultaneously**: `.github/workflows/puredns.yml`
 
 
 
