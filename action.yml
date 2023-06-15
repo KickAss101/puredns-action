@@ -1,0 +1,85 @@
+name: PureDNS Action
+description: Run PureDNS tasks
+
+inputs:
+  list:
+    description: "List of hosts to resolve"
+    required: false
+    default: ""
+
+  domain:
+    description: "domain to run bruteforce"
+    required: false
+    default: ""
+
+  dns_list:
+    description: "words to run bruteforce"
+    required: false
+    default: ""
+  
+  bruteforce:
+    description: "bruteforce sub command"
+    required: false
+    default: 'false'
+
+  resolvers:
+    description: "List of resolvers"
+    required: true
+    default: "resolvers/resolvers.txt"
+
+  trusted_resolvers:
+    description: "List of trusted resolvers"
+    required: true
+    default: "resolvers/resolvers-trusted.txt"
+
+  rate_limit:
+    description: "Limit total queries per second for public resolvers"
+    required: false
+    default: "500"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache MassDNS and PureDNS
+      id: cache-deps
+      uses: actions/cache@v3
+      with:
+        path: |
+          /usr/local/bin/massdns
+          $GOPATH/pkg/mod/github.com/d3mondev/puredns*
+        key: ${{ runner.os }}-deps-${{ hashFiles('subdir/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-deps-
+
+    - name: Install MassDNS
+      run: |
+        if [[ ! -d "massdns" ]]; then
+          sudo apt-get update
+          sudo apt-get install -y libldns-dev
+          if [[ -z "${{ steps.cache-deps.outputs.cache-hit }}" ]]; then
+            git clone https://github.com/blechschmidt/massdns.git
+            cd massdns
+            make
+            sudo cp bin/massdns /usr/local/bin/
+          fi
+        fi
+      shell: bash
+
+    - name: Install PureDNS
+      if: steps.cache-go.outputs.cache-hit != 'true' && steps.cache-deps.outputs.cache-hit != 'true'
+      run: go install github.com/d3mondev/puredns/v2@latest
+      shell: bash
+
+    - name: Resolve subdomains
+      if: ${{ inputs.bruteforce == 'false' }}
+      run: |
+        echo "Resolving ..."
+        ~/go/bin/puredns resolve "${{ inputs.list }}" --rate-limit "${{ inputs.rate_limit }}" -r "${{ inputs.resolvers }}" --resolvers-trusted "${{ inputs.trusted_resolvers }}" --write-wildcards "subs.wildcards" --write "subs.resolve"
+      shell: bash
+  
+    - name: Bruteforce subdomains
+      if: ${{ inputs.bruteforce == 'true' }}
+      run: |
+        echo "Bruteforcing ..." 
+        cat "${{ inputs.dns_list }}" | ~/go/bin/puredns bruteforce "${{ inputs.domain }}" -t 500 -n 25 -w "subs.brute" --rate-limit "${{ inputs.rate_limit }}" -r "${{ inputs.resolvers }}" --resolvers-trusted "${{ inputs.trusted_resolvers }}"
+      shell: bash
