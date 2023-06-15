@@ -1,5 +1,7 @@
 <h1 align="center">PureDNS Action</h1>
 
+<h4 align="center">This is a GitHub Action to <a href="https://github.com/d3mondev/puredns">PureDNS</a></h4>
+
 Example Usage
 -----
 
