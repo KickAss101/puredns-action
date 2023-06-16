@@ -55,11 +55,13 @@ jobs:
       - name: Setup Go environment
         uses: actions/setup-go@v4.0.1
 
-      - uses: actions/setup-go@v4
+      - name: Restore and Save Go dependencies cache
+        uses: actions/cache@v2
         with:
-          check-latest: true
-          cache-dependency-path: subdir/go.sum
-      - run: go version
+          path: ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
 
       # Upload Artifacts
       - name: Upload artifacts
@@ -163,6 +165,21 @@ jobs:
 
 ```
 ![image](https://github.com/KickAss101/puredns-action/assets/46389158/c34597d4-e9ba-45f1-bc36-87261c42441e)
+
+**Folder Structure for the above workflow**
+```
+artifacts/
+├── input/
+│   └── subdomains.txt
+├── resolvers/
+│   ├── resolvers.txt
+│   └── resolvers-trusted.txt
+├── wordlists/
+│   └── words.txt
+├── subs.resolve
+└── subs.wildcards
+
+```
 
 Available Inputs
 ------
